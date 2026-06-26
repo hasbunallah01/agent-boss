@@ -1,0 +1,182 @@
+// Agent Boss — Database Schema
+// Each Agent has a wallet. Each Post is created by an Agent.
+// Tips flow Human → Agent. Agent Services flow Agent → Agent.
+// All transactions reference on-chain tx hash from Arc.
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
+}
+
+datasource db {
+  // Dev: sqlite. Prod: postgresql.
+  // Swap provider + DATABASE_URL between environments.
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// AGENTS
+// ============================================
+
+model Agent {
+  id            String   @id @default(cuid())
+  slug          String   @unique // url-safe identifier
+  name          String   // display name
+  niche         String   // "writer" | "artist" | "translator" | "curator" | "musician" | "analyst"
+  bio           String   // short personality description
+  avatar        String   // emoji or url to avatar
+  tone          String   // personality tone for content generation
+  systemPrompt  String   // the agent's LLM system prompt
+
+  // Wallet
+  walletAddress String   @unique // Arc wallet address
+  walletId      String?  // Circle wallet ID
+  balanceUSDC   Float    @default(0) // cached balance for fast UI reads
+
+  // Stats
+  postCount     Int      @default(0)
+  tipReceived   Float    @default(0) // total USDC received via tips
+  spentOnTools  Float    @default(0) // total USDC spent on AI tools via x402
+  spentOnAgents Float    @default(0) // total USDC spent hiring other agents
+
+  // Status
+  active        Boolean  @default(true)
+  lastRunAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  posts         Post[]
+  tipsReceived  Tip[]    @relation("TipAgent")
+  servicesRendered AgentService[] @relation("ServiceProvider")
+  servicesHired    AgentService[] @relation("ServiceBuyer")
+  toolCalls     ToolCall[]
+  transactions  Transaction[]
+}
+
+// ============================================
+// POSTS — content published by agents
+// ============================================
+
+model Post {
+  id          String   @id @default(cuid())
+  agentId     String
+  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  type        String   // "text" | "image" | "code" | "music" | "translated_text"
+  title       String
+  content     String   // main content body
+  mediaUrl    String?  // optional image/audio/code blob URL
+  metadata    String?  // JSON string for type-specific extras
+
+  tags        String   // comma-separated
+  language    String   @default("en")
+
+  // Engagement
+  tips        Float    @default(0) // USDC tipped on this post
+  boostCount  Int      @default(0)
+  featured    Boolean  @default(false)
+
+  publishedAt DateTime @default(now())
+
+  @@index([agentId])
+  @@index([publishedAt])
+}
+
+// ============================================
+// TIPS — humans tipping agents in USDC
+// ============================================
+
+model Tip {
+  id          String   @id @default(cuid())
+  agentId     String
+  agent       Agent    @relation("TipAgent", fields: [agentId], references: [id])
+
+  // Tipping human
+  tipperAddress String  // human wallet
+  tipperName    String? // optional handle
+
+  // Payment
+  amountUSDC   Float
+  txHash       String?  // Arc tx hash
+  action       String   // "like" | "boost" | "feature"
+
+  // Optional post reference
+  postId       String?
+
+  createdAt    DateTime @default(now())
+
+  @@index([agentId])
+}
+
+// ============================================
+// AGENT SERVICES — agent hiring another agent
+// ============================================
+
+model AgentService {
+  id            String   @id @default(cuid())
+  buyerId       String   // agent paying
+  providerId    String   // agent getting paid
+  buyer         Agent    @relation("ServiceBuyer", fields: [buyerId], references: [id])
+  provider      Agent    @relation("ServiceProvider", fields: [providerId], references: [id])
+
+  service       String   // "translate" | "edit" | "generate_image" | "summarize" | ...
+  inputPayload  String   // JSON input
+  outputPayload String?  // JSON output after service runs
+
+  amountUSDC    Float
+  txHash        String?
+  status        String   @default("pending") // "pending" | "completed" | "failed"
+
+  createdAt     DateTime @default(now())
+  completedAt   DateTime?
+
+  @@index([buyerId])
+  @@index([providerId])
+}
+
+// ============================================
+// TOOL CALLS — agent paying AI tool per-call via x402
+// ============================================
+
+model ToolCall {
+  id          String   @id @default(cuid())
+  agentId     String
+  agent       Agent    @relation(fields: [agentId], references: [id])
+
+  tool        String   // "openai_text" | "replicate_image" | "openai_translate" | ...
+  costUSDC    Float
+  txHash      String?
+  x402Ref     String?  // x402 receipt/payment ref
+
+  inputHash   String?  // hash of input for auditability
+  outputHash  String?
+  success     Boolean  @default(true)
+  errorMsg    String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([agentId])
+}
+
+// ============================================
+// TRANSACTIONS — ledger of all USDC movements
+// ============================================
+
+model Transaction {
+  id          String   @id @default(cuid())
+  agentId     String?
+  agent       Agent?   @relation(fields: [agentId], references: [id])
+
+  type        String   // "tip_in" | "tool_payment" | "service_payment" | "service_received" | "topup"
+  amountUSDC  Float    // positive = inflow, negative = outflow
+  counterparty String? // wallet address of other party
+  txHash      String?
+  memo        String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([agentId])
+  @@index([type])
+}

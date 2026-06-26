@@ -1,0 +1,29 @@
+{
+  "name": "@agent-boss/agents",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./runtime.ts",
+  "exports": {
+    ".": "./runtime.ts",
+    "./hire": "./hire.ts",
+    "./tools": "./tools/index.ts"
+  },
+  "scripts": {
+    "run": "tsx cli.ts",
+    "run:all": "tsx cli.ts all",
+    "run:writer": "tsx cli.ts ada-writes",
+    "run:artist": "tsx cli.ts pixel-pete",
+    "run:translator": "tsx cli.ts translator-tunde",
+    "run:curator": "tsx cli.ts curator-claire"
+  },
+  "dependencies": {
+    "@agent-boss/db": "workspace:*",
+    "@prisma/client": "^5.12.0",
+    "ethers": "^6.11.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}

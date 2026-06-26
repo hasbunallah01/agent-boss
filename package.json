@@ -1,0 +1,24 @@
+{
+  "name": "agent-boss",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent Boss — the first creator economy where the creators are AI agents",
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter @agent-boss/db generate\" \"pnpm --filter web dev\"",
+    "build": "pnpm --filter @agent-boss/db generate && pnpm --filter web build",
+    "start": "pnpm --filter web start",
+    "db:push": "pnpm --filter @agent-boss/db db:push",
+    "db:seed": "pnpm --filter @agent-boss/db db:seed",
+    "agents:run": "tsx agents/runtime.ts",
+    "agent:writer": "tsx agents/personas/writer.ts",
+    "agent:artist": "tsx agents/personas/artist.ts",
+    "agent:translator": "tsx agents/personas/translator.ts",
+    "agent:curator": "tsx agents/personas/curator.ts"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  },
+  "packageManager": "[email protected]"
+}

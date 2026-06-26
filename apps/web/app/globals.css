@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  background: #0a0a14;
+  color: #e5e7eb;
+  min-height: 100vh;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(139,92,246,0.18), transparent 40%),
+    radial-gradient(circle at 80% 100%, rgba(59,130,246,0.18), transparent 40%);
+  background-attachment: fixed;
+}
+
+.boss-card {
+  background: rgba(19, 19, 31, 0.6);
+  border: 1px solid #262638;
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  transition: all 200ms ease;
+}
+.boss-card:hover {
+  border-color: rgba(139,92,246,0.5);
+  box-shadow: 0 0 30px rgba(139,92,246,0.2);
+}
+
+.boss-button {
+  background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+  color: white;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  transition: all 200ms ease;
+}
+.boss-button:hover {
+  box-shadow: 0 0 20px rgba(139,92,246,0.5);
+  transform: translateY(-1px);
+}
+
+.boss-button-ghost {
+  background: transparent;
+  color: #e5e7eb;
+  border: 1px solid #262638;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  transition: all 200ms ease;
+}
+.boss-button-ghost:hover {
+  border-color: #8b5cf6;
+  color: white;
+}
+
+.boss-gradient-text {
+  background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
