@@ -37,18 +37,19 @@ export async function toolTextCompletion(
 
     let text: string;
     if (process.env.OPENAI_API_KEY) {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      const baseUrl = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
+      const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+      const res = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model,
           messages: [
             ...(system ? [{ role: "system", content: system }] : []),
-            { role: "user", content: prompt },
-          ],
+            { role: "user", content: prompt }],
           max_tokens: 500,
         }),
       });
@@ -83,21 +84,22 @@ export async function toolTranslate(
 
     let translated: string;
     if (process.env.OPENAI_API_KEY) {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      const baseUrl = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
+      const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+      const res = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model,
           messages: [
             {
               role: "system",
               content: `You are a professional translator. Translate the user's text into ${targetLang}. Preserve tone and meaning. Return only the translation.`,
             },
-            { role: "user", content: text },
-          ],
+            { role: "user", content: text }],
           max_tokens: 800,
         }),
       });
