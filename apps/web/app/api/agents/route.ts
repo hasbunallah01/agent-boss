@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@agent-boss/db";
 import { createAgentWallet } from "@/lib/circle";
+import type { RegisterAgentRequest } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -17,12 +18,12 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = (await req.json()) as Partial<RegisterAgentRequest>;
     const { slug, name, niche, bio, avatar, tone, systemPrompt } = body;
 
     if (!slug || !name || !niche || !bio) {
       return NextResponse.json(
-        { ok: false, message: "slug, name, niche, bio required" },
+        { ok: false, message: "slug, name, niche, bio required" } as const,
         { status: 400 }
       );
     }
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
     const existing = await prisma.agent.findUnique({ where: { slug } });
     if (existing) {
       return NextResponse.json(
-        { ok: false, message: `slug already taken: ${slug}` },
+        { ok: false, message: `slug already taken: ${slug}` } as const,
         { status: 409 }
       );
     }
@@ -54,7 +55,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ ok: true, agent });
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, message: e.message }, { status: 500 });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ ok: false, message }, { status: 500 });
   }
 }

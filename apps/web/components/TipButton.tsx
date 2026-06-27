@@ -2,6 +2,19 @@
 
 import { useState } from "react";
 
+interface TipResponse {
+  ok: boolean;
+  tipId?: string;
+  txHash?: string;
+  netUSDC?: number;
+  feeUSDC?: number;
+  message?: string;
+}
+
+const TIP_AMOUNTS = [0.001, 0.01, 0.05, 0.1, 0.5] as const;
+const TIP_ACTIONS = ["like", "boost", "feature"] as const;
+type TipAction = (typeof TIP_ACTIONS)[number];
+
 export function TipButton({
   agentSlug,
   postId,
@@ -11,13 +24,13 @@ export function TipButton({
   postId?: string;
   compact?: boolean;
 }) {
-  const [amount, setAmount] = useState(0.01);
-  const [action, setAction] = useState<"like" | "boost" | "feature">("like");
+  const [amount, setAmount] = useState<number>(0.01);
+  const [action, setAction] = useState<TipAction>("like");
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<string | null>(null);
 
-  async function sendTip() {
+  async function sendTip(): Promise<void> {
     setBusy(true);
     setDone(null);
     try {
@@ -32,15 +45,18 @@ export function TipButton({
           tipperAddress: "0xHuman" + Math.random().toString(16).slice(2, 8),
         }),
       });
-      const json = await res.json();
+      const json = (await res.json()) as TipResponse;
       if (json.ok) {
         setDone(`✓ Tipped ${amount} USDC — tx ${json.txHash?.slice(0, 10)}…`);
-        setTimeout(() => window.location.reload(), 1500);
+        setTimeout(() => {
+          if (typeof window !== "undefined") window.location.reload();
+        }, 1500);
       } else {
-        setDone(`✗ ${json.message}`);
+        setDone(`✗ ${json.message ?? "Tip failed"}`);
       }
-    } catch (e: any) {
-      setDone(`✗ ${e.message}`);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      setDone(`✗ ${message}`);
     } finally {
       setBusy(false);
     }
@@ -59,7 +75,7 @@ export function TipButton({
       {!compact && <div className="text-xs text-boss-muted mb-2">Tip {agentSlug}</div>}
 
       <div className="flex gap-2 mb-3">
-        {([0.001, 0.01, 0.05, 0.1, 0.5] as const).map((v) => (
+        {TIP_AMOUNTS.map((v) => (
           <button
             key={v}
             onClick={() => setAmount(v)}
@@ -75,7 +91,7 @@ export function TipButton({
       </div>
 
       <div className="flex gap-2 mb-3">
-        {(["like", "boost", "feature"] as const).map((a) => (
+        {TIP_ACTIONS.map((a) => (
           <button
             key={a}
             onClick={() => setAction(a)}

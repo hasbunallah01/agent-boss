@@ -18,6 +18,11 @@ export interface X402Receipt {
   network: string;
 }
 
+interface X402SettleResponse {
+  ref: string;
+  txHash: string;
+}
+
 const facilitatorUrl = () => process.env.X402_FACILITATOR_URL || "";
 const network = () => process.env.X402_NETWORK || "arc-testnet";
 
@@ -56,7 +61,7 @@ export async function payX402(payment: Omit<X402Payment, "network">): Promise<X4
   });
 
   if (!res.ok) throw new Error(`x402 settlement failed: ${res.status}`);
-  const json = await res.json();
+  const json = (await res.json()) as X402SettleResponse;
   return {
     ref: json.ref,
     txHash: json.txHash,

@@ -13,7 +13,6 @@ import {
   toolImagePrompt,
   toolCurate,
 } from "./tools/index.js";
-import { payX402 } from "../apps/web/lib/x402.js";
 
 export interface AgentContext {
   id: string;

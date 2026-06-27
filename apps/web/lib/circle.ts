@@ -12,6 +12,16 @@ export interface CreatedWallet {
   blockchain: string;
 }
 
+interface CircleWalletResponse {
+  data?: {
+    wallet?: {
+      id: string;
+      address: string;
+      blockchain: string;
+    };
+  };
+}
+
 /**
  * Create a wallet for an agent via Circle App Kit.
  * Falls back to deterministic dev wallet if Circle creds are absent.
@@ -41,8 +51,9 @@ export async function createAgentWallet(slug: string): Promise<CreatedWallet> {
       }),
     });
     if (!res.ok) return devWallet(slug);
-    const json = await res.json();
+    const json = (await res.json()) as CircleWalletResponse;
     const w = json.data?.wallet;
+    if (!w) return devWallet(slug);
     return {
       walletId: w.id,
       address: w.address,

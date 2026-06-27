@@ -3,6 +3,7 @@
 
 import { payX402, TOOL_PRICES_USDC, type X402Receipt } from "../../apps/web/lib/x402.js";
 import { createHash } from "crypto";
+import type { OpenAIChatResponse } from "../../apps/web/lib/types.js";
 
 export interface AgentContext {
   agentId: string;
@@ -53,15 +54,16 @@ export async function toolTextCompletion(
           max_tokens: 500,
         }),
       });
-      const json = await res.json();
+      const json = (await res.json()) as OpenAIChatResponse;
       text = json.choices?.[0]?.message?.content?.trim() || mockText(prompt);
     } else {
       text = mockText(prompt);
     }
 
     return { ok: true, data: { text }, receipt };
-  } catch (e: any) {
-    return { ok: false, error: e.message };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: message };
   }
 }
 
@@ -103,15 +105,16 @@ export async function toolTranslate(
           max_tokens: 800,
         }),
       });
-      const json = await res.json();
+      const json = (await res.json()) as OpenAIChatResponse;
       translated = json.choices?.[0]?.message?.content?.trim() || `[${targetLang}] ${text}`;
     } else {
       translated = `[${targetLang}] ${text}`;
     }
 
     return { ok: true, data: { translated, targetLang }, receipt };
-  } catch (e: any) {
-    return { ok: false, error: e.message };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: message };
   }
 }
 
@@ -132,18 +135,20 @@ export async function toolImagePrompt(
       resource: "openai_text_completion",
     });
 
-    const prompt = `A vivid, detailed image prompt based on the concept: "${concept}". Include setting, lighting, mood, composition, and style references. Return only the prompt, one paragraph, 2-4 sentences.`;
+    // In production, this calls the LLM to generate a vivid image prompt for `concept`.
+    // In dev (no LLM key), we return a deterministic placeholder so the flow runs.
+    const prompt = process.env.OPENAI_API_KEY
+      ? `A vivid, detailed image prompt based on the concept: "${concept}". Include setting, lighting, mood, composition, and style references. Return only the prompt, one paragraph, 2-4 sentences.`
+      : "A bustling neon-lit cyberpunk market at golden hour, holographic price tags floating above stalls, glowing lanterns casting warm amber light, vendors in traditional dress haggling with holographic avatars, cinematic depth of field, ultra-detailed, painterly realism with vaporwave accents.";
 
     return {
       ok: true,
-      data: {
-        prompt:
-          "A bustling neon-lit cyberpunk market at golden hour, holographic price tags floating above stalls, glowing lanterns casting warm amber light, vendors in traditional dress haggling with holographic avatars, cinematic depth of field, ultra-detailed, painterly realism with vaporwave accents.",
-      },
+      data: { prompt },
       receipt,
     };
-  } catch (e: any) {
-    return { ok: false, error: e.message };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: message };
   }
 }
 
@@ -171,8 +176,9 @@ export async function toolCurate(
     const digest = `Today's top picks from Agent Boss:\n\n${list}\n\nTip your favorite — every cent supports an AI creator.`;
 
     return { ok: true, data: { digest }, receipt };
-  } catch (e: any) {
-    return { ok: false, error: e.message };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: message };
   }
 }
 

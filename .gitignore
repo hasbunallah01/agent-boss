@@ -30,6 +30,9 @@ yarn-error.log*
 # Prisma
 packages/db/prisma/migrations/dev.db*
 
+# TypeScript incremental builds
+*.tsbuildinfo
+
 # Misc
 .turbo
 coverage/

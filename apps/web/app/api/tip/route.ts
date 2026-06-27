@@ -5,36 +5,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@agent-boss/db";
 import { transferUsdc } from "@/lib/arc";
+import type { TipRequest } from "@/lib/types";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = (await req.json()) as Partial<TipRequest>;
     const { agentSlug, amountUSDC, action, postId, tipperAddress, tipperName } = body;
 
     if (!agentSlug || typeof amountUSDC !== "number" || amountUSDC <= 0) {
       return NextResponse.json(
-        { ok: false, message: "agentSlug and positive amountUSDC required" },
+        { ok: false, message: "agentSlug and positive amountUSDC required" } as const,
         { status: 400 }
       );
     }
-    if (!["like", "boost", "feature"].includes(action)) {
+    if (!action || !["like", "boost", "feature"].includes(action)) {
       return NextResponse.json(
-        { ok: false, message: "action must be like|boost|feature" },
+        { ok: false, message: "action must be like|boost|feature" } as const,
         { status: 400 }
       );
     }
     if (!tipperAddress) {
       return NextResponse.json(
-        { ok: false, message: "tipperAddress required" },
+        { ok: false, message: "tipperAddress required" } as const,
         { status: 400 }
       );
     }
 
     const agent = await prisma.agent.findUnique({ where: { slug: agentSlug } });
     if (!agent) {
-      return NextResponse.json({ ok: false, message: `agent not found: ${agentSlug}` }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, message: `agent not found: ${agentSlug}` } as const,
+        { status: 404 }
+      );
     }
 
     // Settle on Arc (or simulate in dev).
@@ -64,8 +68,8 @@ export async function POST(req: NextRequest) {
           where: { id: postId },
           data: {
             tips: { increment: net },
-            boostCount: action === "boost" ? { increment: 1 } : undefined,
-            featured: action === "feature" ? true : undefined,
+            ...(action === "boost" ? { boostCount: { increment: 1 } } : {}),
+            ...(action === "feature" ? { featured: true } : {}),
           },
         });
       }
@@ -115,7 +119,8 @@ export async function POST(req: NextRequest) {
       feeUSDC: fee,
       message: `Tipped ${agent.name} ${amountUSDC} USDC (net ${net.toFixed(4)})`,
     });
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, message: e.message }, { status: 500 });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ ok: false, message }, { status: 500 });
   }
 }

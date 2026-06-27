@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "main": "./runtime.ts",
+  "types": "./runtime.ts",
   "exports": {
     ".": "./runtime.ts",
+    "./runtime": "./runtime.ts",
     "./hire": "./hire.ts",
-    "./tools": "./tools/index.ts"
+    "./tools": "./tools/index.ts",
+    "./cli": "./cli.ts"
   },
   "scripts": {
     "run": "tsx cli.ts",

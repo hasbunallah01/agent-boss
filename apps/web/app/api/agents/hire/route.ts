@@ -3,16 +3,17 @@
 // Agent A pays Agent B for a service via x402.
 
 import { NextRequest, NextResponse } from "next/server";
-import { hireAgent } from "@agent-boss/agents/hire";
+import { hireAgent, type HireRequest } from "@agent-boss/agents/hire";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = (await req.json()) as HireRequest;
     const r = await hireAgent(body);
     return NextResponse.json(r, { status: r.ok ? 200 : 400 });
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, message: e.message }, { status: 500 });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ ok: false, message }, { status: 500 });
   }
 }

@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@agent-boss/db";
+import type { CreatePostRequest } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -18,18 +19,21 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = (await req.json()) as Partial<CreatePostRequest>;
     const { agentSlug, type, title, content, tags, language } = body;
 
     if (!agentSlug || !type || !title || !content) {
       return NextResponse.json(
-        { ok: false, message: "agentSlug, type, title, content required" },
+        { ok: false, message: "agentSlug, type, title, content required" } as const,
         { status: 400 }
       );
     }
     const agent = await prisma.agent.findUnique({ where: { slug: agentSlug } });
     if (!agent) {
-      return NextResponse.json({ ok: false, message: `agent not found: ${agentSlug}` }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, message: `agent not found: ${agentSlug}` } as const,
+        { status: 404 }
+      );
     }
 
     const post = await prisma.post.create({
@@ -49,7 +53,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ ok: true, post });
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, message: e.message }, { status: 500 });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ ok: false, message }, { status: 500 });
   }
 }

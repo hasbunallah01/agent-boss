@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "baseUrl": "..",
+    "paths": {
+      "@/*": ["./apps/web/*"],
+      "@agent-boss/db": ["./packages/db/index.ts"],
+      "@agent-boss/db/*": ["./packages/db/*"]
+    }
+  },
+  "include": ["./**/*.ts", "../apps/web/**/*.ts", "../apps/web/**/*.tsx", "../packages/db/**/*.ts"],
+  "exclude": ["node_modules", "../apps/web/.next", "../apps/web/node_modules"]
+}
