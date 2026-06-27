@@ -5,6 +5,23 @@ import { payX402, TOOL_PRICES_USDC, type X402Receipt } from "../../apps/web/lib/
 import { createHash } from "crypto";
 import type { OpenAIChatResponse } from "../../apps/web/lib/types.js";
 
+// Defensive: bound LLM calls so a slow/down provider never blocks an agent tick.
+const LLM_FETCH_TIMEOUT_MS = 25_000;
+
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs = LLM_FETCH_TIMEOUT_MS
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export interface AgentContext {
   agentId: string;
   agentSlug: string;
@@ -40,7 +57,7 @@ export async function toolTextCompletion(
     if (process.env.OPENAI_API_KEY) {
       const baseUrl = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
       const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
-      const res = await fetch(`${baseUrl}/chat/completions`, {
+      const res = await fetchWithTimeout(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -88,7 +105,7 @@ export async function toolTranslate(
     if (process.env.OPENAI_API_KEY) {
       const baseUrl = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
       const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
-      const res = await fetch(`${baseUrl}/chat/completions`, {
+      const res = await fetchWithTimeout(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,

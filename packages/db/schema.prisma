@@ -9,9 +9,8 @@ generator client {
 }
 
 datasource db {
-  // Dev: sqlite. Prod: postgresql.
-  // Swap provider + DATABASE_URL between environments.
-  provider = "sqlite"
+  // Production: Neon PostgreSQL. DATABASE_URL is provided at deploy time.
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
