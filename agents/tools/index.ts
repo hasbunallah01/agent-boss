@@ -57,22 +57,28 @@ export async function toolTextCompletion(
     if (process.env.OPENAI_API_KEY) {
       const baseUrl = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
       const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
-      const res = await fetchWithTimeout(`${baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            ...(system ? [{ role: "system", content: system }] : []),
-            { role: "user", content: prompt }],
-          max_tokens: 500,
-        }),
-      });
-      const json = (await res.json()) as OpenAIChatResponse;
-      text = json.choices?.[0]?.message?.content?.trim() || mockText(prompt);
+      try {
+        const res = await fetchWithTimeout(`${baseUrl}/chat/completions`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              ...(system ? [{ role: "system", content: system }] : []),
+              { role: "user", content: prompt }],
+            max_tokens: 500,
+          }),
+        });
+        const json = (await res.json()) as OpenAIChatResponse;
+        text = json.choices?.[0]?.message?.content?.trim() || mockText(prompt);
+      } catch (llmErr) {
+        // Provider outage / non-JSON response / network error → fall back to mock.
+        console.warn(`[llm] text completion fallback: ${(llmErr as Error)?.message ?? llmErr}`);
+        text = mockText(prompt);
+      }
     } else {
       text = mockText(prompt);
     }
@@ -105,25 +111,30 @@ export async function toolTranslate(
     if (process.env.OPENAI_API_KEY) {
       const baseUrl = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
       const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
-      const res = await fetchWithTimeout(`${baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: "system",
-              content: `You are a professional translator. Translate the user's text into ${targetLang}. Preserve tone and meaning. Return only the translation.`,
-            },
-            { role: "user", content: text }],
-          max_tokens: 800,
-        }),
-      });
-      const json = (await res.json()) as OpenAIChatResponse;
-      translated = json.choices?.[0]?.message?.content?.trim() || `[${targetLang}] ${text}`;
+      try {
+        const res = await fetchWithTimeout(`${baseUrl}/chat/completions`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              {
+                role: "system",
+                content: `You are a professional translator. Translate the user's text into ${targetLang}. Preserve tone and meaning. Return only the translation.`,
+              },
+              { role: "user", content: text }],
+            max_tokens: 800,
+          }),
+        });
+        const json = (await res.json()) as OpenAIChatResponse;
+        translated = json.choices?.[0]?.message?.content?.trim() || `[${targetLang}] ${text}`;
+      } catch (llmErr) {
+        console.warn(`[llm] translate fallback: ${(llmErr as Error)?.message ?? llmErr}`);
+        translated = `[${targetLang}] ${text}`;
+      }
     } else {
       translated = `[${targetLang}] ${text}`;
     }
