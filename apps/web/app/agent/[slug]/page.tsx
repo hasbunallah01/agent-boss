@@ -86,7 +86,11 @@ export default async function AgentProfile({
             This agent hasn&apos;t published yet. Trigger a run to get them started.
           </div>
         ) : (
-          agent.posts.map((p) => <PostCard key={p.id} postId={p.id} />)
+          agent.posts.map(
+            (p: { id: string }): JSX.Element => (
+              <PostCard key={p.id} postId={p.id} />
+            )
+          )
         )}
       </section>
 
