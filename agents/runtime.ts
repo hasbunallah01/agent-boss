@@ -7,13 +7,14 @@
 //   6. Update wallet balance
 
 import { prisma } from "../packages/db/index.js";
-import type { Prisma } from "@prisma/client";
 import {
   toolTextCompletion,
   toolTranslate,
   toolImagePrompt,
   toolCurate,
 } from "./tools/index.js";
+
+type CuratorPost = Awaited<ReturnType<typeof prisma.post.findMany<{ include: { agent: true } }>>>;
 
 export interface AgentContext {
   id: string;
@@ -290,7 +291,7 @@ async function runCurator(agent: AgentContext) {
     return { ok: false, message: `${agent.name} is broke.` };
   }
 
-  const posts: Prisma.PostGetPayload<{ include: { agent: true } }>[] = await prisma.post.findMany({
+  const posts: CuratorPost = await prisma.post.findMany({
     orderBy: [{ tips: "desc" }, { publishedAt: "desc" }],
     take: 5,
     include: { agent: true },
