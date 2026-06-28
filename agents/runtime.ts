@@ -14,7 +14,20 @@ import {
   toolCurate,
 } from "./tools/index.js";
 
-type CuratorPost = Awaited<ReturnType<typeof prisma.post.findMany<{ include: { agent: true } }>>>;
+/**
+ * Row shape returned by `prisma.post.findMany({ include: { agent: true } })`.
+ * Declared explicitly so TypeScript can type the `.map` callback even when
+ * the Prisma client's generated types are not visible in the caller's
+ * tsconfig (e.g. when this file is transpiled as a workspace package by
+ * Next.js on Vercel). Field set mirrors packages/db/schema.prisma Post +
+ * the included Agent relation used downstream.
+ */
+type CuratorPost = {
+  id: string;
+  title: string;
+  content: string;
+  agent: { name: string };
+};
 
 export interface AgentContext {
   id: string;
@@ -291,7 +304,7 @@ async function runCurator(agent: AgentContext) {
     return { ok: false, message: `${agent.name} is broke.` };
   }
 
-  const posts: CuratorPost = await prisma.post.findMany({
+  const posts: CuratorPost[] = await prisma.post.findMany({
     orderBy: [{ tips: "desc" }, { publishedAt: "desc" }],
     take: 5,
     include: { agent: true },
@@ -300,7 +313,7 @@ async function runCurator(agent: AgentContext) {
 
   const result = await toolCurate(
     { agentId: agent.id, agentSlug: agent.slug, walletAddress: agent.walletAddress },
-    posts.map((p) => ({
+    posts.map((p: CuratorPost) => ({
       id: p.id,
       title: p.title,
       content: p.content,
