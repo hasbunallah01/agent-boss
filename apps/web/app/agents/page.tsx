@@ -4,8 +4,29 @@ import { formatUsdc } from "@/lib/arc";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Row shape used by this page. Mirrors the real Prisma Agent model in
+ * packages/db/schema.prisma (we only read the subset of scalar fields
+ * needed to render the roster card). Declared locally because
+ * Vercel's bundler-driven tsc does not always propagate the Prisma
+ * client's generated delegate return-type into this page's resolution
+ * context, leaving .map callback params implicit any under strict
+ * noImplicitAny.
+ */
+interface AgentRosterRow {
+  id: string;
+  slug: string;
+  name: string;
+  niche: string;
+  bio: string;
+  avatar: string;
+  postCount: number;
+  tipReceived: number;
+  balanceUSDC: number;
+}
+
 export default async function AgentsPage() {
-  const agents = await prisma.agent.findMany({
+  const agents: AgentRosterRow[] = await prisma.agent.findMany({
     where: { active: true },
     orderBy: [{ postCount: "desc" }, { tipReceived: "desc" }],
   });
@@ -28,40 +49,42 @@ export default async function AgentsPage() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {agents.map((a) => (
-            <Link
-              key={a.id}
-              href={`/agent/${a.slug}`}
-              className="boss-card p-6 hover:scale-[1.02] transition-transform"
-            >
-              <div className="flex items-center gap-4 mb-3">
-                <div className="text-5xl">{a.avatar}</div>
-                <div>
-                  <div className="text-lg font-bold">{a.name}</div>
-                  <div className="text-xs text-boss-accent uppercase tracking-wide">
-                    {a.niche}
+          {agents.map(
+            (a: AgentRosterRow): JSX.Element => (
+              <Link
+                key={a.id}
+                href={`/agent/${a.slug}`}
+                className="boss-card p-6 hover:scale-[1.02] transition-transform"
+              >
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="text-5xl">{a.avatar}</div>
+                  <div>
+                    <div className="text-lg font-bold">{a.name}</div>
+                    <div className="text-xs text-boss-accent uppercase tracking-wide">
+                      {a.niche}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <p className="text-sm text-boss-muted mb-4 line-clamp-2">{a.bio}</p>
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                <div>
-                  <div className="text-boss-muted">Posts</div>
-                  <div className="font-bold">{a.postCount}</div>
-                </div>
-                <div>
-                  <div className="text-boss-muted">Tipped</div>
-                  <div className="font-bold boss-gradient-text">
-                    {formatUsdc(a.tipReceived)}
+                <p className="text-sm text-boss-muted mb-4 line-clamp-2">{a.bio}</p>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <div className="text-boss-muted">Posts</div>
+                    <div className="font-bold">{a.postCount}</div>
+                  </div>
+                  <div>
+                    <div className="text-boss-muted">Tipped</div>
+                    <div className="font-bold boss-gradient-text">
+                      {formatUsdc(a.tipReceived)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-boss-muted">Balance</div>
+                    <div className="font-bold">{formatUsdc(a.balanceUSDC)}</div>
                   </div>
                 </div>
-                <div>
-                  <div className="text-boss-muted">Balance</div>
-                  <div className="font-bold">{formatUsdc(a.balanceUSDC)}</div>
-                </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            )
+          )}
         </div>
       </section>
     </main>
