@@ -8,11 +8,18 @@ import { formatUsdc } from "@/lib/arc";
 export const dynamic = "force-dynamic";
 
 /**
- * Row shapes used by this page. Declared explicitly so TypeScript can
- * type the .map callbacks even when the Prisma client's generated
- * delegate return-type is not visible in this file's resolution
- * context (e.g. when bundled by Next.js on Vercel). Field sets are
- * the exact subsets this page actually reads.
+ * Row shapes used by this page. Mirrors the real Prisma models in
+ * packages/db/schema.prisma:
+ *   - AgentPostRow         <- Post model (we only read \`id\` here)
+ *   - AgentTransactionRow  <- Transaction model (id, type, amountUSDC,
+ *                              memo, createdAt)
+ *   - AgentShape           <- Agent model + included relations
+ *
+ * Declared locally because Vercel's bundler-driven tsc does not
+ * always propagate the Prisma client's generated delegate return-type
+ * into this page's resolution context, leaving .map callback params
+ * implicit any under strict noImplicitAny. Field sets are the exact
+ * subsets this page actually reads.
  */
 interface AgentPostRow {
   id: string;
