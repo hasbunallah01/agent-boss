@@ -7,12 +7,48 @@ import { formatUsdc } from "@/lib/arc";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Row shapes used by this page. Declared explicitly so TypeScript can
+ * type the .map callbacks even when the Prisma client's generated
+ * delegate return-type is not visible in this file's resolution
+ * context (e.g. when bundled by Next.js on Vercel). Field sets are
+ * the exact subsets this page actually reads.
+ */
+interface AgentPostRow {
+  id: string;
+}
+
+interface AgentTransactionRow {
+  id: string;
+  type: string;
+  amountUSDC: number;
+  memo: string | null;
+  createdAt: Date;
+}
+
+interface AgentShape {
+  id: string;
+  slug: string;
+  niche: string;
+  name: string;
+  bio: string;
+  avatar: string;
+  walletAddress: string;
+  balanceUSDC: number;
+  postCount: number;
+  tipReceived: number;
+  spentOnTools: number;
+  spentOnAgents: number;
+  posts: AgentPostRow[];
+  transactions: AgentTransactionRow[];
+}
+
 export default async function AgentProfile({
   params,
 }: {
   params: { slug: string };
 }) {
-  const agent = await prisma.agent.findUnique({
+  const agent: AgentShape | null = await prisma.agent.findUnique({
     where: { slug: params.slug },
     include: {
       posts: {
@@ -87,7 +123,7 @@ export default async function AgentProfile({
           </div>
         ) : (
           agent.posts.map(
-            (p: { id: string }): JSX.Element => (
+            (p: AgentPostRow): JSX.Element => (
               <PostCard key={p.id} postId={p.id} />
             )
           )
@@ -109,27 +145,29 @@ export default async function AgentProfile({
                 </tr>
               </thead>
               <tbody>
-                {agent.transactions.map((tx) => (
-                  <tr key={tx.id} className="border-t border-boss-border/40">
-                    <td className="p-3">
-                      <TxBadge type={tx.type} />
-                    </td>
-                    <td
-                      className={`p-3 text-right font-mono ${
-                        tx.amountUSDC > 0 ? "text-green-400" : "text-red-400"
-                      }`}
-                    >
-                      {tx.amountUSDC > 0 ? "+" : ""}
-                      {tx.amountUSDC.toFixed(4)} USDC
-                    </td>
-                    <td className="p-3 text-boss-muted truncate max-w-[260px]">
-                      {tx.memo || "—"}
-                    </td>
-                    <td className="p-3 text-right text-boss-muted text-xs">
-                      {new Date(tx.createdAt).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
+                {agent.transactions.map(
+                  (tx: AgentTransactionRow): JSX.Element => (
+                    <tr key={tx.id} className="border-t border-boss-border/40">
+                      <td className="p-3">
+                        <TxBadge type={tx.type} />
+                      </td>
+                      <td
+                        className={`p-3 text-right font-mono ${
+                          tx.amountUSDC > 0 ? "text-green-400" : "text-red-400"
+                        }`}
+                      >
+                        {tx.amountUSDC > 0 ? "+" : ""}
+                        {tx.amountUSDC.toFixed(4)} USDC
+                      </td>
+                      <td className="p-3 text-boss-muted truncate max-w-[260px]">
+                        {tx.memo || "—"}
+                      </td>
+                      <td className="p-3 text-right text-boss-muted text-xs">
+                        {new Date(tx.createdAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  )
+                )}
               </tbody>
             </table>
           </div>
