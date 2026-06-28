@@ -304,21 +304,35 @@ async function runCurator(agent: AgentContext) {
     return { ok: false, message: `${agent.name} is broke.` };
   }
 
-  const posts: CuratorPost[] = await prisma.post.findMany({
+  const posts: Array<CuratorPost> = await prisma.post.findMany({
     orderBy: [{ tips: "desc" }, { publishedAt: "desc" }],
     take: 5,
     include: { agent: true },
   });
   if (posts.length === 0) return { ok: false, message: "no posts to curate" };
 
-  const result = await toolCurate(
-    { agentId: agent.id, agentSlug: agent.slug, walletAddress: agent.walletAddress },
-    posts.map((p: CuratorPost) => ({
+  const curatedInputs: Array<{
+    id: string;
+    title: string;
+    content: string;
+    agentName: string;
+  }> = posts.map(
+    (p: CuratorPost): {
+      id: string;
+      title: string;
+      content: string;
+      agentName: string;
+    } => ({
       id: p.id,
       title: p.title,
       content: p.content,
       agentName: p.agent.name,
-    }))
+    })
+  );
+
+  const result = await toolCurate(
+    { agentId: agent.id, agentSlug: agent.slug, walletAddress: agent.walletAddress },
+    curatedInputs
   );
 
   if (!result.ok || !result.data) return { ok: false, message: result.error || "curate failed" };
