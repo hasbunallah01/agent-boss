@@ -8,12 +8,73 @@ const ALLOWED_ORIGINS = (process.env.CORS_ALLOWED_ORIGINS || "*")
   .split(",")
   .map((o) => o.trim());
 
+// --- Rate limiter (in-memory, per IP) ---------------------------------------
+// 60 req/min per IP for all /api/* routes.
+// 10 req/hour per IP for POST /api/agents (protects Circle wallet creation).
+type Bucket = number[]; // unix-ms timestamps of recent requests
+const buckets = new Map<string, Bucket>();
+
+const MINUTE_MS = 60_000;
+const HOUR_MS = 60 * 60_000;
+const PER_MINUTE_LIMIT = 60;
+const AGENT_POST_PER_HOUR_LIMIT = 10;
+
+function clientIp(req: NextRequest): string {
+  // Vercel sets x-forwarded-for; fall back to x-real-ip. Both can be comma lists.
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
+  const xri = req.headers.get("x-real-ip");
+  if (xri) return xri.trim();
+  return "unknown";
+}
+
+function prune(bucket: Bucket, windowMs: number, now: number): void {
+  const cutoff = now - windowMs;
+  // Drop expired entries from the front.
+  while (bucket.length > 0 && bucket[0] <= cutoff) bucket.shift();
+}
+
+function check(
+  req: NextRequest,
+  windowMs: number,
+  limit: number
+): boolean {
+  const ip = clientIp(req);
+  const key = `${ip}:${windowMs}:${limit}:${req.nextUrl.pathname}:${req.method}`;
+  const now = Date.now();
+  const bucket = buckets.get(key) ?? [];
+  prune(bucket, windowMs, now);
+  if (bucket.length >= limit) return false;
+  bucket.push(now);
+  buckets.set(key, bucket);
+  return true;
+}
+
+function tooMany(): NextResponse {
+  return NextResponse.json(
+    { ok: false, message: "Too many requests" } as const,
+    { status: 429 }
+  );
+}
+
 export function middleware(req: NextRequest) {
   const origin = req.headers.get("origin") || "";
 
   // Only apply CORS to API routes (pages already work fine).
   if (!req.nextUrl.pathname.startsWith("/api/")) {
     return NextResponse.next();
+  }
+
+  // --- Rate limiting ------------------------------------------------------
+  // Per-minute cap applies to every /api request.
+  if (!check(req, MINUTE_MS, PER_MINUTE_LIMIT)) return tooMany();
+  // Stricter cap on POST /api/agents (Circle wallet creation).
+  if (
+    req.method === "POST" &&
+    req.nextUrl.pathname === "/api/agents" &&
+    !check(req, HOUR_MS, AGENT_POST_PER_HOUR_LIMIT)
+  ) {
+    return tooMany();
   }
 
   // Build permissive CORS headers for hackathon demo.
