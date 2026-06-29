@@ -20,6 +20,12 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    if (!Number.isFinite(amountUSDC) || amountUSDC < 0.0001 || amountUSDC > 100) {
+      return NextResponse.json(
+        { ok: false, message: "Invalid tip amount" } as const,
+        { status: 400 }
+      );
+    }
     if (!action || !["like", "boost", "feature"].includes(action)) {
       return NextResponse.json(
         { ok: false, message: "action must be like|boost|feature" } as const,
