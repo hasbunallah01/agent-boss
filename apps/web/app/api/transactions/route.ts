@@ -32,7 +32,29 @@ interface TransactionRow {
 
 export async function GET(req: NextRequest) {
   const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") || "50", 10), 200);
+  const tipperAddress = req.nextUrl.searchParams.get("tipperAddress") || undefined;
+  const agentSlug = req.nextUrl.searchParams.get("agentSlug") || undefined;
+
+  // Resolve agentSlug → agentId. If slug is provided but doesn't match any
+  // agent, return an empty list (REST-idiomatic for a collection endpoint).
+  let agentId: string | undefined;
+  if (agentSlug) {
+    const agent = await prisma.agent.findUnique({
+      where: { slug: agentSlug },
+      select: { id: true },
+    });
+    if (!agent) {
+      return NextResponse.json({ ok: true, transactions: [] });
+    }
+    agentId = agent.id;
+  }
+
+  const where: { counterparty?: string; agentId?: string } = {};
+  if (tipperAddress) where.counterparty = tipperAddress;
+  if (agentId) where.agentId = agentId;
+
   const txs: TransactionRow[] = await prisma.transaction.findMany({
+    where,
     orderBy: { createdAt: "desc" },
     take: limit,
     include: { agent: true },
