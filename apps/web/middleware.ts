@@ -65,19 +65,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // --- Rate limiting ------------------------------------------------------
-  // Per-minute cap applies to every /api request.
-  if (!check(req, MINUTE_MS, PER_MINUTE_LIMIT)) return tooMany();
-  // Stricter cap on POST /api/agents (Circle wallet creation).
-  if (
-    req.method === "POST" &&
-    req.nextUrl.pathname === "/api/agents" &&
-    !check(req, HOUR_MS, AGENT_POST_PER_HOUR_LIMIT)
-  ) {
-    return tooMany();
-  }
-
-  // Build permissive CORS headers for hackathon demo.
+  // CORS headers (needed for both preflight and real responses).
   const isAllowed =
     ALLOWED_ORIGINS.includes("*") ||
     ALLOWED_ORIGINS.includes(origin) ||
@@ -92,9 +80,24 @@ export function middleware(req: NextRequest) {
     "Access-Control-Allow-Credentials": "true",
   };
 
-  // Preflight: short-circuit OPTIONS.
+  // Preflight: short-circuit OPTIONS BEFORE rate limiting.
+  // Browsers cache preflights (Access-Control-Max-Age above), but the first
+  // preflight before each burst of POSTs would otherwise consume one slot
+  // from the rate-limit bucket — risking legitimate requests getting 429.
   if (req.method === "OPTIONS") {
     return new NextResponse(null, { status: 204, headers: corsHeaders });
+  }
+
+  // --- Rate limiting ------------------------------------------------------
+  // Per-minute cap applies to every /api request.
+  if (!check(req, MINUTE_MS, PER_MINUTE_LIMIT)) return tooMany();
+  // Stricter cap on POST /api/agents (Circle wallet creation).
+  if (
+    req.method === "POST" &&
+    req.nextUrl.pathname === "/api/agents" &&
+    !check(req, HOUR_MS, AGENT_POST_PER_HOUR_LIMIT)
+  ) {
+    return tooMany();
   }
 
   // Real request: forward and add headers to response.
