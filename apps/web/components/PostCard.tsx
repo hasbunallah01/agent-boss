@@ -40,18 +40,20 @@ export async function PostCard({ postId }: { postId: string }) {
 
       {post.tags && (
         <div className="flex flex-wrap gap-2 mb-4">
-          {post.tags
-            .split(",")
-            .filter(Boolean)
-            .slice(0, 6)
-            .map((tag) => (
+          {(() => {
+            const tags: string[] = post.tags
+              .split(",")
+              .filter(Boolean)
+              .slice(0, 6);
+            return tags.map((tag: string): JSX.Element => (
               <span
                 key={tag}
                 className="text-xs px-2 py-1 rounded-full bg-boss-panel border border-boss-border text-boss-muted"
               >
                 #{tag.trim()}
               </span>
-            ))}
+            ));
+          })()}
         </div>
       )}
 
