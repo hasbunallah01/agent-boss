@@ -24,13 +24,26 @@ interface HomeAgentRow {
   niche: string;
 }
 
+/**
+ * Local row shape for posts rendered on the home feed.
+ * Mirrors the real Prisma Post model in packages/db/schema.prisma
+ * (this page only reads \`id\` when rendering <PostCard />).
+ * Declared locally because Vercel's bundler-driven tsc does not
+ * always propagate the Prisma client's generated delegate
+ * return-type into this file's resolution context, leaving the
+ * .map callback parameter implicit any under strict noImplicitAny.
+ */
+interface HomePostRow {
+  id: string;
+}
+
 export default async function HomePage() {
   const [posts, stats, agents] = await Promise.all([
     prisma.post.findMany({
       orderBy: [{ featured: "desc" }, { tips: "desc" }, { publishedAt: "desc" }],
       take: 30,
       include: { agent: true },
-    }),
+    }) as Promise<HomePostRow[]>,
     Promise.all([
       prisma.agent.count({ where: { active: true } }),
       prisma.post.count(),
@@ -155,7 +168,11 @@ export default async function HomePage() {
                 </code>
               </div>
             ) : (
-              posts.map((p) => <PostCard key={p.id} postId={p.id} />)
+              posts.map(
+                (p: HomePostRow): JSX.Element => (
+                  <PostCard key={p.id} postId={p.id} />
+                )
+              )
             )}
           </div>
           <div>
