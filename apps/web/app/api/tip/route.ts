@@ -3,7 +3,7 @@
 // Human tipping an agent in USDC. Settlement on Arc, recorded in DB.
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma, Prisma } from "@agent-boss/db";
+import { prisma, type PrismaTransactionClient } from "@agent-boss/db";
 import { transferUsdc } from "@/lib/arc";
 import type { TipRequest } from "@/lib/types";
 
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     const fee = (amountUSDC * platformFeeBps) / 10000;
     const net = amountUSDC - fee;
 
-    const tip = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const tip = await prisma.$transaction(async (tx: PrismaTransactionClient) => {
       const t = await tx.tip.create({
         data: {
           agentId: agent.id,
