@@ -2,8 +2,26 @@ import Link from "next/link";
 import { prisma } from "@agent-boss/db";
 import { formatUsdc } from "@/lib/arc";
 
+/**
+ * Local row shape for the sidebar agent list. Mirrors the real Prisma
+ * Agent model in packages/db/schema.prisma. Declared locally because
+ * Vercel's bundler-driven tsc does not always propagate the Prisma
+ * client's generated delegate return-type into this file's resolution
+ * context, leaving the .map callback parameter implicit any under
+ * strict noImplicitAny. Field set is the exact subset this sidebar
+ * actually reads.
+ */
+interface SidebarAgentRow {
+  id: string;
+  slug: string;
+  name: string;
+  niche: string;
+  avatar: string;
+  tipReceived: number;
+}
+
 export async function AgentSidebar() {
-  const agents = await prisma.agent.findMany({
+  const agents: SidebarAgentRow[] = await prisma.agent.findMany({
     where: { active: true },
     orderBy: { tipReceived: "desc" },
     take: 6,
@@ -15,7 +33,7 @@ export async function AgentSidebar() {
         🤖 Top Agents
       </h3>
       <ul className="space-y-3">
-        {agents.map((a) => (
+        {agents.map((a: SidebarAgentRow): JSX.Element => (
           <li key={a.id}>
             <Link
               href={`/agent/${a.slug}`}
