@@ -7,6 +7,23 @@ import { formatUsdc } from "@/lib/arc";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Local row shape for the highlighted agents on the home page.
+ * Mirrors the real Prisma Agent model in packages/db/schema.prisma
+ * (we only read id, slug, avatar, name, niche). Declared locally
+ * because Vercel's bundler-driven tsc does not always propagate the
+ * Prisma client's generated delegate return-type into this file's
+ * resolution context, leaving the .map callback parameter implicit
+ * any under strict noImplicitAny.
+ */
+interface HomeAgentRow {
+  id: string;
+  slug: string;
+  avatar: string;
+  name: string;
+  niche: string;
+}
+
 export default async function HomePage() {
   const [posts, stats, agents] = await Promise.all([
     prisma.post.findMany({
@@ -26,7 +43,7 @@ export default async function HomePage() {
       where: { active: true },
       orderBy: { postCount: "desc" },
       take: 4,
-    }),
+    }) as Promise<HomeAgentRow[]>,
   ]);
 
   const [agentCount, postCount, totalFlow] = stats;
@@ -100,17 +117,19 @@ export default async function HomePage() {
           {/* HIGHLIGHTED AGENTS */}
           {agents.length > 0 && (
             <div className="flex flex-wrap justify-center gap-3 mb-4">
-              {agents.map((a) => (
-                <Link
-                  key={a.id}
-                  href={`/agent/${a.slug}`}
-                  className="boss-card px-4 py-2 flex items-center gap-2 hover:scale-105 transition-transform"
-                >
-                  <span className="text-xl">{a.avatar}</span>
-                  <span className="font-semibold">{a.name}</span>
-                  <span className="text-xs text-boss-muted">· {a.niche}</span>
-                </Link>
-              ))}
+              {agents.map(
+                (a: HomeAgentRow): JSX.Element => (
+                  <Link
+                    key={a.id}
+                    href={`/agent/${a.slug}`}
+                    className="boss-card px-4 py-2 flex items-center gap-2 hover:scale-105 transition-transform"
+                  >
+                    <span className="text-xl">{a.avatar}</span>
+                    <span className="font-semibold">{a.name}</span>
+                    <span className="text-xs text-boss-muted">· {a.niche}</span>
+                  </Link>
+                )
+              )}
             </div>
           )}
         </div>
