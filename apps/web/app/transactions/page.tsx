@@ -3,8 +3,32 @@ import { prisma } from "@agent-boss/db";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Local row shape for transactions rendered on the public ledger
+ * page. Mirrors the real Prisma Transaction model + included Agent
+ * relation in packages/db/schema.prisma. Declared locally because
+ * Vercel's bundler-driven tsc does not always propagate the Prisma
+ * client's generated delegate return-type into this file's
+ * resolution context, leaving the .map callback parameter implicit
+ * any under strict noImplicitAny. Field set is the exact subset
+ * this page actually reads.
+ */
+interface LedgerTransactionRow {
+  id: string;
+  type: string;
+  amountUSDC: number;
+  txHash: string | null;
+  memo: string | null;
+  createdAt: Date;
+  agent: {
+    slug: string;
+    name: string;
+    avatar: string;
+  } | null;
+}
+
 export default async function LedgerPage() {
-  const txs = await prisma.transaction.findMany({
+  const txs: LedgerTransactionRow[] = await prisma.transaction.findMany({
     orderBy: { createdAt: "desc" },
     take: 100,
     include: { agent: true },
@@ -49,43 +73,45 @@ export default async function LedgerPage() {
                   </td>
                 </tr>
               )}
-              {txs.map((tx) => (
-                <tr key={tx.id} className="border-t border-boss-border/40">
-                  <td className="p-3 text-xs text-boss-muted whitespace-nowrap">
-                    {new Date(tx.createdAt).toLocaleString()}
-                  </td>
-                  <td className="p-3">
-                    {tx.agent ? (
-                      <Link
-                        href={`/agent/${tx.agent.slug}`}
-                        className="flex items-center gap-2 hover:text-boss-accent"
-                      >
-                        <span>{tx.agent.avatar}</span>
-                        <span>{tx.agent.name}</span>
-                      </Link>
-                    ) : (
-                      <span className="text-boss-muted">—</span>
-                    )}
-                  </td>
-                  <td className="p-3">
-                    <span className="text-xs px-2 py-1 rounded-full bg-boss-panel border border-boss-border text-boss-muted">
-                      {tx.type.replace("_", " ")}
-                    </span>
-                  </td>
-                  <td
-                    className={`p-3 text-right font-mono ${
-                      tx.amountUSDC > 0 ? "text-green-400" : "text-red-400"
-                    }`}
-                  >
-                    {tx.amountUSDC > 0 ? "+" : ""}
-                    {tx.amountUSDC.toFixed(4)} USDC
-                  </td>
-                  <td className="p-3 font-mono text-xs text-boss-accent truncate max-w-[120px]">
-                    {tx.txHash ? tx.txHash.slice(0, 14) + "…" : "—"}
-                  </td>
-                  <td className="p-3 text-boss-muted truncate max-w-[260px]">{tx.memo || "—"}</td>
-                </tr>
-              ))}
+              {txs.map(
+                (tx: LedgerTransactionRow): JSX.Element => (
+                  <tr key={tx.id} className="border-t border-boss-border/40">
+                    <td className="p-3 text-xs text-boss-muted whitespace-nowrap">
+                      {new Date(tx.createdAt).toLocaleString()}
+                    </td>
+                    <td className="p-3">
+                      {tx.agent ? (
+                        <Link
+                          href={`/agent/${tx.agent.slug}`}
+                          className="flex items-center gap-2 hover:text-boss-accent"
+                        >
+                          <span>{tx.agent.avatar}</span>
+                          <span>{tx.agent.name}</span>
+                        </Link>
+                      ) : (
+                        <span className="text-boss-muted">—</span>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      <span className="text-xs px-2 py-1 rounded-full bg-boss-panel border border-boss-border text-boss-muted">
+                        {tx.type.replace("_", " ")}
+                      </span>
+                    </td>
+                    <td
+                      className={`p-3 text-right font-mono ${
+                        tx.amountUSDC > 0 ? "text-green-400" : "text-red-400"
+                      }`}
+                    >
+                      {tx.amountUSDC > 0 ? "+" : ""}
+                      {tx.amountUSDC.toFixed(4)} USDC
+                    </td>
+                    <td className="p-3 font-mono text-xs text-boss-accent truncate max-w-[120px]">
+                      {tx.txHash ? tx.txHash.slice(0, 14) + "…" : "—"}
+                    </td>
+                    <td className="p-3 text-boss-muted truncate max-w-[260px]">{tx.memo || "—"}</td>
+                  </tr>
+                )
+              )}
             </tbody>
           </table>
         </div>
