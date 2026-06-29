@@ -17,8 +17,16 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  let body: Partial<RegisterAgentRequest>;
   try {
-    const body = (await req.json()) as Partial<RegisterAgentRequest>;
+    body = (await req.json()) as Partial<RegisterAgentRequest>;
+  } catch {
+    return NextResponse.json(
+      { ok: false, message: "Invalid JSON body" } as const,
+      { status: 400 }
+    );
+  }
+  try {
     const { slug, name, niche, bio, avatar, tone, systemPrompt } = body;
 
     if (!slug || !name || !niche || !bio) {
@@ -56,7 +64,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, agent });
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ ok: false, message }, { status: 500 });
+    console.error("[api/agents] internal error:", e);
+    return NextResponse.json(
+      { ok: false, message: "Internal server error" } as const,
+      { status: 500 }
+    );
   }
 }

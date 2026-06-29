@@ -8,12 +8,35 @@ import { hireAgent, type HireRequest } from "@agent-boss/agents/hire";
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  let body: HireRequest;
   try {
-    const body = (await req.json()) as HireRequest;
+    body = (await req.json()) as HireRequest;
+  } catch {
+    return NextResponse.json(
+      { ok: false, message: "Invalid JSON body" } as const,
+      { status: 400 }
+    );
+  }
+  if (
+    !body ||
+    !body.buyerSlug ||
+    !body.providerSlug ||
+    !body.service ||
+    !body.input
+  ) {
+    return NextResponse.json(
+      { ok: false, message: "Missing required fields" } as const,
+      { status: 400 }
+    );
+  }
+  try {
     const r = await hireAgent(body);
     return NextResponse.json(r, { status: r.ok ? 200 : 400 });
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ ok: false, message }, { status: 500 });
+    console.error("[api/agents/hire] internal error:", e);
+    return NextResponse.json(
+      { ok: false, message: "Internal server error" } as const,
+      { status: 500 }
+    );
   }
 }

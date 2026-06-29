@@ -10,8 +10,16 @@ import type { TipRequest } from "@/lib/types";
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  let body: Partial<TipRequest>;
   try {
-    const body = (await req.json()) as Partial<TipRequest>;
+    body = (await req.json()) as Partial<TipRequest>;
+  } catch {
+    return NextResponse.json(
+      { ok: false, message: "Invalid JSON body" } as const,
+      { status: 400 }
+    );
+  }
+  try {
     const { agentSlug, amountUSDC, action, postId, tipperAddress, tipperName } = body;
 
     if (!agentSlug || typeof amountUSDC !== "number" || amountUSDC <= 0) {
@@ -126,7 +134,10 @@ export async function POST(req: NextRequest) {
       message: `Tipped ${agent.name} ${amountUSDC} USDC (net ${net.toFixed(4)})`,
     });
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ ok: false, message }, { status: 500 });
+    console.error("[api/tip] internal error:", e);
+    return NextResponse.json(
+      { ok: false, message: "Internal server error" } as const,
+      { status: 500 }
+    );
   }
 }
