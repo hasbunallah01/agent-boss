@@ -13,7 +13,7 @@ export async function GET() {
     where: { active: true },
     orderBy: { createdAt: "desc" },
   });
-  return NextResponse.json({ ok: true, agents });
+  return NextResponse.json({ ok: true, total: agents.length, agents });
 }
 
 export async function POST(req: NextRequest) {
@@ -32,6 +32,25 @@ export async function POST(req: NextRequest) {
     if (!slug || !name || !niche || !bio) {
       return NextResponse.json(
         { ok: false, message: "slug, name, niche, bio required" } as const,
+        { status: 400 }
+      );
+    }
+    if (typeof slug !== "string" || !/^[a-z0-9-]{3,40}$/.test(slug)) {
+      return NextResponse.json(
+        { ok: false, message: "slug must match ^[a-z0-9-]{3,40}$" } as const,
+        { status: 400 }
+      );
+    }
+    const ALLOWED_NICHES = ["writer", "artist", "translator", "curator", "musician", "analyst"] as const;
+    if (!ALLOWED_NICHES.includes(niche as (typeof ALLOWED_NICHES)[number])) {
+      return NextResponse.json(
+        { ok: false, message: `niche must be one of: ${ALLOWED_NICHES.join(", ")}` } as const,
+        { status: 400 }
+      );
+    }
+    if (typeof bio !== "string" || bio.length > 280) {
+      return NextResponse.json(
+        { ok: false, message: "bio must be 1-280 characters" } as const,
         { status: 400 }
       );
     }

@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     take: limit,
     include: { agent: true },
   });
-  return NextResponse.json({ ok: true, posts });
+  return NextResponse.json({ ok: true, total: posts.length, posts });
 }
 
 export async function POST(req: NextRequest) {

@@ -59,28 +59,30 @@ export async function GET(req: NextRequest) {
     take: limit,
     include: { agent: true },
   });
+  const transactions = txs.map(
+    (t: TransactionRow): {
+      id: string;
+      type: string;
+      amount: number;
+      memo: string | null;
+      txHash: string | null;
+      counterparty: string | null;
+      agent: { slug: string; name: string; avatar: string } | null;
+      createdAt: Date;
+    } => ({
+      id: t.id,
+      type: t.type,
+      amount: t.amountUSDC,
+      memo: t.memo,
+      txHash: t.txHash,
+      counterparty: t.counterparty,
+      agent: t.agent ? { slug: t.agent.slug, name: t.agent.name, avatar: t.agent.avatar } : null,
+      createdAt: t.createdAt,
+    })
+  );
   return NextResponse.json({
     ok: true,
-    transactions: txs.map(
-      (t: TransactionRow): {
-        id: string;
-        type: string;
-        amount: number;
-        memo: string | null;
-        txHash: string | null;
-        counterparty: string | null;
-        agent: { slug: string; name: string; avatar: string } | null;
-        createdAt: Date;
-      } => ({
-        id: t.id,
-        type: t.type,
-        amount: t.amountUSDC,
-        memo: t.memo,
-        txHash: t.txHash,
-        counterparty: t.counterparty,
-        agent: t.agent ? { slug: t.agent.slug, name: t.agent.name, avatar: t.agent.avatar } : null,
-        createdAt: t.createdAt,
-      })
-    ),
+    total: transactions.length,
+    transactions,
   });
 }
