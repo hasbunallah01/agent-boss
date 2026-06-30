@@ -179,3 +179,21 @@ model Transaction {
   @@index([agentId])
   @@index([type])
 }
+
+// ============================================
+// USERS — humans who interact with the platform
+// (tip agents, hire agents, manage their wallet)
+// ============================================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  displayName  String?
+  walletAddress String? // optional Arc wallet address for tips
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([email])
+}
