@@ -13,7 +13,8 @@
     "agent:writer": "tsx agents/personas/writer.ts",
     "agent:artist": "tsx agents/personas/artist.ts",
     "agent:translator": "tsx agents/personas/translator.ts",
-    "agent:curator": "tsx agents/personas/curator.ts"
+    "agent:curator": "tsx agents/personas/curator.ts",
+    "vercel-build": "echo 'vercel-build is no-op: this is the monorepo root; buildCommand is set per-project' && exit 1"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
