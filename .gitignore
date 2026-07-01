@@ -36,3 +36,4 @@ packages/db/prisma/migrations/dev.db*
 # Misc
 .turbo
 coverage/
+.vercel-tmp/
