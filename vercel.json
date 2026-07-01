@@ -1,5 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm --filter @agent-boss/db generate && pnpm --filter web build",
+  "buildCommand": "pnpm --filter @agent-boss/db migrate:deploy && pnpm --filter @agent-boss/db generate && pnpm --filter web build",
   "installCommand": "pnpm install"
 }
