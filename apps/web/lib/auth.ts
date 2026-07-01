@@ -15,7 +15,7 @@
 //   We re-read the user from the DB on /api/auth/me so revocations
 //   (delete account, password reset) take effect immediately.
 
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 

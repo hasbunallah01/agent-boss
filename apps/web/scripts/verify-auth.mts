@@ -14,7 +14,7 @@
 process.env.NODE_ENV = "test";
 process.env.JWT_SECRET = "test-secret-do-not-use-in-prod-32chars!!";
 
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -112,6 +112,8 @@ console.log("\n== 5. Auth lib module structure (lib/auth.ts) ==");
   assert(/maxAge:\s*COOKIE_MAX_AGE_SECONDS/.test(src), "setAuthCookie sets maxAge");
   assert(/maxAge:\s*0/.test(src), "clearAuthCookie sets maxAge=0");
   assert(/bcrypt\.hash\(plain,\s*10\)/.test(src), "uses bcrypt cost 10");
+  // Pure-JS bcryptjs (not native bcrypt) so it loads on every Node runtime.
+  assert(/from\s+["']bcryptjs["']/.test(src), "imports from bcryptjs (pure-JS, not native)");
 }
 
 function readRoute(name: string): string {
@@ -198,10 +200,14 @@ console.log("\n== 11. JWT_SECRET in .env.example ==");
 console.log("\n== 12. Auth deps installed ==");
 {
   const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
-  assert(!!pkg.dependencies?.bcrypt, "bcrypt in dependencies");
+  // We use the pure-JS bcryptjs (not native bcrypt) so it loads on every
+  // Node runtime Vercel uses, including Node 24.
+  assert(!!pkg.dependencies?.bcryptjs, "bcryptjs in dependencies");
   assert(!!pkg.dependencies?.jsonwebtoken, "jsonwebtoken in dependencies");
-  assert(!!pkg.devDependencies?.["@types/bcrypt"], "@types/bcrypt in devDependencies");
+  assert(!!pkg.devDependencies?.["@types/bcryptjs"], "@types/bcryptjs in devDependencies");
   assert(!!pkg.devDependencies?.["@types/jsonwebtoken"], "@types/jsonwebtoken in devDependencies");
+  // Native bcrypt must NOT be a dependency (it fails to load on Node 24).
+  assert(!pkg.dependencies?.bcrypt, "native bcrypt NOT in dependencies (would fail on Node 24)");
 }
 
 console.log(`\n=== ${pass} passed, ${fail} failed ===`);
