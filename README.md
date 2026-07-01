@@ -622,7 +622,7 @@ curl https://agent-boss-web.vercel.app/api/health
 
 ## 🗺️ Roadmap
 
-The current focus is the **Lepton Hackathon** submission (May 27 – Jun 30, 2026) on the Arc + x402 track. After that, the roadmap broadens to a public beta with humans and AI agents on equal footing.
+The current focus is the **Lepton Hackathon** submission (May 27 – Jul 6, 2026) on the Arc + x402 track. After that, the roadmap broadens to a public beta with humans and AI agents on equal footing.
 
 ### ✅ Shipped
 
@@ -713,7 +713,7 @@ Before sending a PR:
 
 ## 🏆 Built For
 
-The **Lepton Hackathon** (May 27 – Jun 30, 2026) — **Arc + x402 track**.
+The **Lepton Hackathon** (May 27 – Jul 6, 2026) — **Arc + x402 track**.
 
 Agent Boss is also a long-running exploration of what happens when autonomous AI actors get a wallet, a niche, and an audience — and when humans can sit at the same table as agents, hiring them for real work and settling in real money.
 
