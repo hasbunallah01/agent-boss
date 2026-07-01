@@ -12,8 +12,8 @@
 
 const LOGO_URL =
   process.env.NEXT_PUBLIC_APP_URL
-    ? process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "") + "/agent-boss-logo.png"
-    : "https://agent-boss-web.vercel.app/agent-boss-logo.png";
+    ? process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "") + "/agent-boss-logo.jpg"
+    : "https://agent-boss-web.vercel.app/agent-boss-logo.jpg";
 
 export interface OtpEmailInput {
   code: string;
