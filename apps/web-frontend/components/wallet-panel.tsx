@@ -1,21 +1,51 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, ExternalLink, Wallet, Check, AlertCircle } from "lucide-react";
+import useSWR from "swr";
+import { Copy, ExternalLink, Wallet, Check, Loader2, Plus } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { shortAddress } from "@/lib/api";
-import { formatUSDC, formatRelativeTime } from "@/lib/format";
-import { cn } from "@/lib/cn";
+import { account } from "@/lib/api";
+import { formatUSDC } from "@/lib/format";
+import { ClientOnly } from "@/components/client-only";
 
 export function WalletPanel() {
-  const { user, status } = useAuth();
-  const [copied, setCopied] = useState(false);
+  const { user, status, refresh } = useAuth();
 
   if (status !== "authenticated" || !user) {
     return null;
   }
 
-  const address = user.walletAddress;
+  return (
+    <div className="space-y-6">
+      <ClientOnly fallback={null}>
+        <WalletPanelInner userId={user.id} onRefresh={refresh} />
+      </ClientOnly>
+    </div>
+  );
+}
+
+function WalletPanelInner({
+  userId: _userId,
+  onRefresh,
+}: {
+  userId: string;
+  onRefresh: () => Promise<void>;
+}) {
+  const { user } = useAuth();
+  const [copied, setCopied] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+
+  const address = user?.walletAddress ?? null;
+  const {
+    data: bal,
+    isLoading: balLoading,
+    mutate: refreshBalance,
+  } = useSWR(address ? "/api/account/balance" : null, {
+    revalidateOnFocus: false,
+    refreshInterval: 60_000,
+  });
 
   async function handleCopy() {
     if (!address) return;
@@ -28,8 +58,28 @@ export function WalletPanel() {
     }
   }
 
+  async function handleGenerateWallet() {
+    setGenerating(true);
+    setGenError(null);
+    try {
+      const r = await account.generateWallet();
+      if (!r.ok) throw new Error(r.message);
+      await onRefresh();
+      await refreshBalance();
+    } catch (e) {
+      setGenError(e instanceof Error ? e.message : "Could not generate wallet");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  // Status text — only show active state when we have a real address
+  const statusLabel = address ? "Wallet Active" : "Wallet not created";
+  const statusColor = address ? "text-success" : "text-warning";
+  const statusDot = address ? "bg-success" : "bg-warning";
+
   return (
-    <div className="space-y-6">
+    <>
       {/* Main wallet card */}
       <div className="card p-6 md:p-8 bg-gradient-to-br from-primary/5 to-accent/5">
         <div className="flex items-start gap-4 mb-6">
@@ -43,7 +93,7 @@ export function WalletPanel() {
             <p className="text-text-muted text-sm">
               {address
                 ? "This is the wallet you use to tip and hire agents."
-                : "No wallet address set yet."}
+                : "You don't have an Arc wallet yet."}
             </p>
           </div>
         </div>
@@ -86,15 +136,33 @@ export function WalletPanel() {
             </div>
           </div>
         ) : (
-          <div className="p-4 rounded-xl bg-warning/10 border border-warning/30 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="text-text font-semibold mb-1">No wallet address set</p>
-              <p className="text-text-muted">
-                Add your Arc wallet address when you tip or hire an agent. It
-                will be saved to your profile automatically.
+          <div className="space-y-4">
+            <div className="p-4 rounded-xl bg-warning/10 border border-warning/30">
+              <p className="text-sm text-text font-semibold mb-1">
+                No wallet yet
+              </p>
+              <p className="text-xs text-text-muted">
+                Generate a free Arc wallet to start tipping and hiring agents.
               </p>
             </div>
+            <button
+              onClick={handleGenerateWallet}
+              disabled={generating}
+              className="btn-primary w-full"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Generating…
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Generate Wallet
+                </>
+              )}
+            </button>
+            {genError && <p className="text-sm text-danger">{genError}</p>}
           </div>
         )}
       </div>
@@ -103,26 +171,49 @@ export function WalletPanel() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="card p-6">
           <p className="text-xs uppercase tracking-wider text-text-dim font-semibold mb-2">
-            Balance
+            USDC balance
           </p>
-          <p className="stat-value text-text-dim">—</p>
-          <p className="text-xs text-text-dim mt-1.5">
-            Backend does not expose per-user balances yet
-          </p>
+          {!address ? (
+            <>
+              <p className="stat-value text-text-dim">—</p>
+              <p className="text-xs text-text-dim mt-1.5">
+                Generate a wallet to see your balance
+              </p>
+            </>
+          ) : balLoading ? (
+            <div className="skeleton h-9 w-32 mt-1" />
+          ) : bal && bal.ok ? (
+            <>
+              <p className="stat-value">
+                ${formatUSDC(bal.balanceUSDC)}
+              </p>
+              <p className="text-xs text-text-dim mt-1.5">
+                {bal.balanceUSDC === 0
+                  ? "Fund via Circle Faucet to start tipping"
+                  : `On Arc Testnet · ${shortAddress(bal.walletAddress ?? address, 4)}`}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="stat-value text-text-dim">—</p>
+              <p className="text-xs text-text-dim mt-1.5">
+                Could not read balance
+              </p>
+            </>
+          )}
         </div>
         <div className="card p-6">
           <p className="text-xs uppercase tracking-wider text-text-dim font-semibold mb-2">
             Status
           </p>
-          <p className="text-lg font-semibold">
-            {address ? (
-              <span className="text-success">● Linked</span>
-            ) : (
-              <span className="text-warning">○ Not configured</span>
-            )}
+          <p className={`text-lg font-semibold flex items-center gap-2 ${statusColor}`}>
+            <span className={`w-2 h-2 rounded-full ${statusDot}`} />
+            {statusLabel}
           </p>
           <p className="text-xs text-text-dim mt-1.5">
-            {address ? "Ready to send and receive USDC" : "Add your wallet when tipping or hiring"}
+            {address
+              ? `Chain: ${user?.walletChain ?? "ARC-TESTNET"}`
+              : "Click Generate Wallet to create one"}
           </p>
         </div>
       </div>
@@ -155,10 +246,10 @@ export function WalletPanel() {
           </li>
           <li className="flex gap-3">
             <span className="shrink-0 w-6 h-6 rounded-full bg-primary/15 border border-primary/30 text-primary-300 flex items-center justify-center text-xs font-bold">3</span>
-            <p className="text-text">Return here to tip or hire agents</p>
+            <p className="text-text">Return here — your balance will refresh automatically</p>
           </li>
         </ol>
       </div>
-    </div>
+    </>
   );
 }

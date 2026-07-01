@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Check, Loader2, Mail, X } from "lucide-react";
+import { ArrowRight, Check, Loader2, Mail, X, Lock } from "lucide-react";
 import { useAuthModal } from "@/lib/auth-modal-context";
 import { useAuth } from "@/lib/auth-context";
 
@@ -250,6 +251,15 @@ export function AuthModal() {
                       By signing in you agree to receive a one-time code by email.
                       We never share your address.
                     </p>
+
+                    <Link
+                      href="/auth"
+                      onClick={close}
+                      className="mt-2 text-xs text-primary hover:text-primary-300 hover:underline transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <Lock className="w-3 h-3" />
+                      Sign in with email + password instead
+                    </Link>
                   </form>
                 </>
               ) : (

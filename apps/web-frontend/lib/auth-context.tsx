@@ -1,8 +1,9 @@
 "use client";
 
-// Auth context — wraps the app, exposes the current user + login/logout helpers.
-// Uses the JWT cookie set by /api/auth/verify. The cookie is HTTP-only and
-// SameSite=lax, so it rides along with every fetch (credentials: include).
+// Auth context — wraps the app, exposes the current user + login/register helpers.
+// Uses the JWT cookie set by /api/auth/verify (OTP) or /api/auth/login (password).
+// The cookie is HTTP-only and SameSite=lax, so it rides along with every fetch
+// (credentials: include).
 
 import {
   createContext,
@@ -20,8 +21,22 @@ interface AuthState {
   user: User | null;
   status: "loading" | "authenticated" | "unauthenticated";
   refresh: () => Promise<void>;
+  // OTP flow
   login: (email: string, code: string) => Promise<User>;
   requestOtp: (email: string) => Promise<void>;
+  // Password flow
+  register: (body: {
+    email: string;
+    password: string;
+    displayName?: string;
+  }) => Promise<User>;
+  loginWithPassword: (email: string, password: string) => Promise<User>;
+  // Password reset
+  requestPasswordReset: (email: string) => Promise<void>;
+  resetPassword: (token: string, newPassword: string) => Promise<User>;
+  // Account management
+  saveAvatar: (avatarUrl: string, displayName?: string) => Promise<User>;
+  updateUser: (user: User) => void;
   logout: () => Promise<void>;
 }
 
@@ -66,6 +81,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return r.user;
   }, []);
 
+  const register = useCallback(
+    async (body: { email: string; password: string; displayName?: string }) => {
+      const r = await auth.register(body);
+      if (!r.ok) throw new Error(r.message);
+      setUser(r.user);
+      setStatus("authenticated");
+      return r.user;
+    },
+    []
+  );
+
+  const loginWithPassword = useCallback(async (email: string, password: string) => {
+    const r = await auth.login({ email, password });
+    if (!r.ok) throw new Error(r.message);
+    setUser(r.user);
+    setStatus("authenticated");
+    return r.user;
+  }, []);
+
+  const requestPasswordReset = useCallback(async (email: string) => {
+    await auth.forgotPassword(email);
+  }, []);
+
+  const resetPassword = useCallback(async (token: string, newPassword: string) => {
+    const r = await auth.resetPassword({ token, newPassword });
+    if (!r.ok) throw new Error(r.message);
+    setUser(r.user);
+    setStatus("authenticated");
+    return r.user;
+  }, []);
+
+  const saveAvatar = useCallback(
+    async (avatarUrl: string, displayName?: string) => {
+      const { account } = await import("./api");
+      const r = await account.saveAvatar({ avatarUrl, displayName });
+      if (!r.ok) throw new Error(r.message);
+      setUser(r.user);
+      return r.user;
+    },
+    []
+  );
+
+  const updateUser = useCallback((u: User) => {
+    setUser(u);
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await auth.logout();
@@ -82,8 +143,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthState>(
-    () => ({ user, status, refresh, login, requestOtp, logout }),
-    [user, status, refresh, login, requestOtp, logout]
+    () => ({
+      user,
+      status,
+      refresh,
+      login,
+      requestOtp,
+      register,
+      loginWithPassword,
+      requestPasswordReset,
+      resetPassword,
+      saveAvatar,
+      updateUser,
+      logout,
+    }),
+    [
+      user,
+      status,
+      refresh,
+      login,
+      requestOtp,
+      register,
+      loginWithPassword,
+      requestPasswordReset,
+      resetPassword,
+      saveAvatar,
+      updateUser,
+      logout,
+    ]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Github, Twitter, Send } from "lucide-react";
-import { Logo } from "./logo";
+import { Logo, FounderMark } from "./logo";
 
 export function SiteFooter() {
   return (
@@ -79,17 +79,20 @@ export function SiteFooter() {
           <div>
             <p>© {new Date().getFullYear()} Agent Boss. All on-chain activity on Arc Testnet.</p>
           </div>
-          <div className="flex items-center gap-4">
-            <span>Built by</span>
-            <a
-              href="https://github.com/hasbunallah01"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gold font-semibold hover:text-gold-light transition-colors"
-            >
-              Mutolib Allyullah
-            </a>
-            <span className="font-mono text-text-muted">@hasbunallah01</span>
+          <div className="flex items-center gap-3">
+            <FounderMark size={32} />
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-text-dim">Built by</span>
+              <a
+                href="https://github.com/hasbunallah01"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gold font-semibold hover:text-gold-light transition-colors"
+              >
+                Mutolib Allyullah
+              </a>
+              <span className="font-mono text-text-muted">@hasbunallah01</span>
+            </div>
           </div>
         </div>
       </div>

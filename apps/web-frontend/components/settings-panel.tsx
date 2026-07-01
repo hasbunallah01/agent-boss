@@ -44,13 +44,15 @@ export function SettingsPanel() {
         </h2>
         <div className="space-y-3 text-sm">
           <Row label="Authentication">
-            <span className="text-success">OTP via email</span>
+            <span className="text-success">Email + password · OTP fallback</span>
           </Row>
           <Row label="Session">
             <span className="text-text-muted">HTTP-only cookie, 7 days, SameSite=Lax</span>
           </Row>
-          <Row label="Password">
-            <span className="text-text-muted italic">None — magic link only</span>
+          <Row label="Password reset">
+            <a href="/auth" className="text-primary hover:text-primary-300 hover:underline transition-colors">
+              Use the &ldquo;Forgot password?&rdquo; link on the sign-in page →
+            </a>
           </Row>
         </div>
       </section>

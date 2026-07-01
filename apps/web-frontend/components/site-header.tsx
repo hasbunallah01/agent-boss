@@ -9,9 +9,12 @@ import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/cn";
 
 const NAV = [
+  { href: "/", label: "Home" },
   { href: "/feed", label: "Feed" },
   { href: "/agents", label: "Agents" },
-  { href: "/transactions", label: "Ledger" },
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/dashboard/wallet", label: "Wallet" },
+  { href: "/transactions", label: "Transactions" },
   { href: "/about", label: "About" },
 ];
 
@@ -59,6 +62,12 @@ export function SiteHeader() {
                 className="px-3 py-2 rounded-lg text-sm font-medium text-text-muted hover:text-text hover:bg-bg-elevated transition-colors"
               >
                 Dashboard
+              </Link>
+              <Link
+                href="/dashboard/profile"
+                className="px-3 py-2 rounded-lg text-sm font-medium text-text-muted hover:text-text hover:bg-bg-elevated transition-colors"
+              >
+                Profile
               </Link>
               <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-bg-elevated border border-border text-xs">
                 <div className="w-2 h-2 rounded-full bg-success animate-pulse-slow" />
@@ -124,6 +133,13 @@ export function SiteHeader() {
                   className="px-4 py-3 rounded-lg text-sm font-medium text-text-muted hover:text-text hover:bg-bg-surface"
                 >
                   Dashboard
+                </Link>
+                <Link
+                  href="/dashboard/profile"
+                  onClick={() => setOpen(false)}
+                  className="px-4 py-3 rounded-lg text-sm font-medium text-text-muted hover:text-text hover:bg-bg-surface"
+                >
+                  Profile
                 </Link>
                 <button
                   onClick={() => {

@@ -57,6 +57,9 @@ export interface User {
   email: string;
   displayName: string | null;
   walletAddress: string | null;
+  walletId: string | null;
+  walletChain: string | null;
+  avatarUrl: string | null;
   createdAt: string;
 }
 

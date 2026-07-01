@@ -68,10 +68,34 @@ export const auth = {
     );
   },
   verifyOtp(email: string, code: string) {
-    return request<ApiResp<{ user: User }>>("/api/auth/verify", {
-      method: "POST",
-      body: JSON.stringify({ email, code }),
-    });
+    return request<ApiResp<{ user: User; walletWarning?: string }>>(
+      "/api/auth/verify",
+      { method: "POST", body: JSON.stringify({ email, code }) }
+    );
+  },
+  register(body: { email: string; password: string; displayName?: string }) {
+    return request<ApiResp<{ user: User; walletWarning?: string }>>(
+      "/api/auth/register",
+      { method: "POST", body: JSON.stringify(body) }
+    );
+  },
+  login(body: { email: string; password: string }) {
+    return request<ApiResp<{ user: User; code?: string }>>(
+      "/api/auth/login",
+      { method: "POST", body: JSON.stringify(body) }
+    );
+  },
+  forgotPassword(email: string) {
+    return request<ApiResp<{ message: string }>>(
+      "/api/auth/forgot-password",
+      { method: "POST", body: JSON.stringify({ email }) }
+    );
+  },
+  resetPassword(body: { token: string; newPassword: string }) {
+    return request<ApiResp<{ user: User }>>(
+      "/api/auth/reset-password",
+      { method: "POST", body: JSON.stringify(body) }
+    );
   },
   logout() {
     return request<ApiResp<unknown>>("/api/auth/logout", { method: "POST" });
@@ -185,6 +209,39 @@ export const tips = {
 export const user = {
   myHires() {
     return request<ApiResp<{ total: number; hires: Hire[] }>>(`/api/users/me/hires`);
+  },
+};
+
+// ────────────────────────────────────────────────────────────────
+// Account
+// ────────────────────────────────────────────────────────────────
+
+export const account = {
+  balance() {
+    return request<
+      ApiResp<{
+        balanceUSDC: number;
+        walletConfigured: boolean;
+        walletAddress?: string;
+      }>
+    >(`/api/account/balance`);
+  },
+  generateWallet() {
+    return request<
+      ApiResp<{
+        walletAddress: string;
+        walletId: string | null;
+        walletChain: string | null;
+        alreadyExisted: boolean;
+        warning?: string;
+      }>
+    >(`/api/account/wallet`, { method: "POST" });
+  },
+  saveAvatar(body: { avatarUrl: string; displayName?: string }) {
+    return request<ApiResp<{ user: User }>>(`/api/account/avatar`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
   },
 };
 

@@ -44,13 +44,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <aside>
           <div className="sticky top-24 space-y-6">
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-text-dim font-semibold mb-2">
-                Signed in as
-              </p>
-              <p className="text-sm font-semibold truncate">{user.email}</p>
-              {user.displayName && (
-                <p className="text-xs text-text-muted truncate">{user.displayName}</p>
-              )}
+              <div className="flex items-center gap-3 mb-3">
+                {user.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.displayName ?? user.email}
+                    className="w-12 h-12 rounded-xl object-cover ring-1 ring-primary/30 shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-lg font-bold shrink-0">
+                    {(user.displayName ?? user.email).slice(0, 1).toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">
+                    {user.displayName ?? user.email.split("@")[0]}
+                  </p>
+                  <p className="text-xs text-text-muted truncate">{user.email}</p>
+                </div>
+              </div>
+              <Link
+                href="/dashboard/profile"
+                className="text-xs text-primary hover:text-primary-300 hover:underline transition-colors"
+              >
+                Edit profile →
+              </Link>
             </div>
 
             <nav className="space-y-1">
