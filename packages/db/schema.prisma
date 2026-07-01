@@ -188,12 +188,35 @@ model Transaction {
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
-  passwordHash String
   displayName  String?
   walletAddress String? // optional Arc wallet address for tips
+  emailVerified DateTime? // set on first successful OTP verify
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  loginTokens  LoginToken[]
+
   @@index([email])
+}
+
+// ============================================
+// LOGIN TOKENS — OTP codes for Resend-based auth
+// Single-use, sha256-hashed, 10-min TTL
+// ============================================
+
+model LoginToken {
+  id        String   @id @default(cuid())
+  userId    String?  // set after successful verify
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email     String   // captured at request time (lowercased)
+  codeHash  String   // sha256(otp), never store plaintext
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([codeHash])
+  @@index([expiresAt])
 }

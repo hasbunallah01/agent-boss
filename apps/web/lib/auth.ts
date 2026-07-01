@@ -1,21 +1,14 @@
-// Authentication helpers — password hashing, JWT signing/verifying,
-// HTTP-only cookie management. Keeps every auth concern out of the
-// route handlers so each route stays a thin glue layer.
+// Session helpers — JWT signing/verifying + HTTP-only cookie management.
+// After the OTP switch, this module is purely about the session that the
+// verify route creates. Password hashing has been removed (handled by Resend).
 //
 // Security notes:
-// - bcrypt cost factor 10 is the conventional default for 2024+.
-// - JWT_SECRET must come from the environment. We refuse to fall
-//   back to a hard-coded default in production.
+// - JWT_SECRET must come from the environment. We refuse to fall back to a
+//   hard-coded default in production.
 // - Cookies are HTTP-only, SameSite=Lax, Secure in production.
-//   SameSite=Lax is the right call for an app where forms/links
-//   trigger authenticated requests from the same origin (login,
-//   logout, /api/auth/me on page nav) but external cross-site
-//   POSTs should be rejected.
-// - The token payload is intentionally minimal: userId + email.
-//   We re-read the user from the DB on /api/auth/me so revocations
-//   (delete account, password reset) take effect immediately.
+// - The token payload is intentionally minimal: userId + email. We re-read
+//   the user from the DB on /api/auth/me so revocations take effect.
 
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
@@ -31,22 +24,11 @@ function getSecret(): string {
   const secret = process.env.JWT_SECRET;
   if (!secret || secret.length < 16) {
     if (process.env.NODE_ENV === "production") {
-      // Fail loud in production — a missing/weak JWT_SECRET would
-      // silently accept forged tokens if we fell back to a default.
       throw new Error("JWT_SECRET environment variable is required in production");
     }
-    // Dev fallback so the dev server boots without a .env file.
     return "dev-only-insecure-secret-change-me-please";
   }
   return secret;
-}
-
-export async function hashPassword(plain: string): Promise<string> {
-  return bcrypt.hash(plain, 10);
-}
-
-export async function verifyPassword(plain: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(plain, hash);
 }
 
 export function signAuthToken(payload: AuthTokenPayload): string {

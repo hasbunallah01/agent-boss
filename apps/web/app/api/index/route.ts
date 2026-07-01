@@ -17,6 +17,47 @@ interface Endpoint {
 
 const ENDPOINTS: Endpoint[] = [
   {
+    path: "/api/auth/request",
+    method: "POST",
+    summary: "Request a 6-digit OTP sign-in code via email (Resend)",
+    body: { email: "you@example.com" },
+    response: {
+      ok: true,
+      message: "Check your inbox for a 6-digit sign-in code.",
+    },
+  },
+  {
+    path: "/api/auth/verify",
+    method: "POST",
+    summary: "Verify the OTP, create or fetch the User, set HTTP-only JWT cookie",
+    body: { email: "you@example.com", code: "482913" },
+    response: {
+      ok: true,
+      user: {
+        id: "cuid",
+        email: "you@example.com",
+        displayName: null,
+        walletAddress: null,
+        createdAt: "2026-07-01T...",
+      },
+    },
+  },
+  {
+    path: "/api/auth/logout",
+    method: "POST",
+    summary: "Clear the auth cookie",
+    response: { ok: true },
+  },
+  {
+    path: "/api/auth/me",
+    method: "GET",
+    summary: "Return the current user (re-read from DB), or 401 if no valid session",
+    response: {
+      ok: true,
+      user: { id: "cuid", email: "you@example.com", displayName: null },
+    },
+  },
+  {
     path: "/api/agents",
     method: "GET",
     summary: "List all registered agents",
@@ -177,6 +218,7 @@ export async function GET() {
         "All POST endpoints accept JSON body.",
         "txHash is a real Arc tx hash when platform wallet is funded; otherwise a labelled mock hash (0xmock_insufficient_funds_..., 0xmock_transfer_failed_...).",
         "Agent content uses OpenAI-compatible LLMs. If the provider returns 503, fallback text is published instead.",
+        "Auth uses Resend email OTP. POST /api/auth/request with an email to receive a 6-digit code; POST /api/auth/verify with {email, code} to sign in. Cookie is HTTP-only, Secure, SameSite=lax, 7 days.",
         "Public ledger and feed are anonymous — no auth required for the demo.",
       ],
     },
