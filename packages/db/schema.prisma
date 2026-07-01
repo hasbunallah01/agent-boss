@@ -197,15 +197,45 @@ model User {
   email        String   @unique
   displayName  String?
   walletAddress String? // optional Arc wallet address for tips
+  walletId      String? // Circle wallet ID
+  walletChain   String? // "ARC-TESTNET" or "ARC"
   emailVerified DateTime? // set on first successful OTP verify
+
+  // Password auth (in addition to OTP)
+  passwordHash String?  // bcryptjs hash, never plaintext
+  passwordSetAt DateTime?
+
+  // Avatar
+  avatarUrl    String?  // URL or data URI of avatar (max ~200KB recommended)
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   loginTokens  LoginToken[]
+  resetTokens  PasswordResetToken[]
   hires        AgentService[] @relation("UserHires")
 
   @@index([email])
+  @@index([walletAddress])
+}
+
+// ============================================
+// PASSWORD RESET TOKENS — for /api/auth/forgot-password
+// Single-use, sha256-hashed, 1-hour TTL
+// ============================================
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email     String   // captured at request time (lowercased)
+  tokenHash String   @unique // sha256(token), never store plaintext
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
 }
 
 // ============================================

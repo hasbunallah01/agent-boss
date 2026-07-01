@@ -12,6 +12,7 @@
     "@agent-boss/agents": "workspace:*",
     "@agent-boss/db": "workspace:*",
     "@prisma/client": "^5.12.0",
+    "bcryptjs": "^2.4.3",
     "ethers": "^6.11.0",
     "jsonwebtoken": "^9.0.3",
     "next": "14.1.0",
@@ -20,6 +21,7 @@
     "resend": "^4.0.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.0",

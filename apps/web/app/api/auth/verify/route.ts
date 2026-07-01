@@ -18,6 +18,7 @@ import {
   OTP_MAX_ATTEMPTS,
 } from "@/lib/email-token";
 import { signAuthToken, setAuthCookie } from "@/lib/auth";
+import { ensureUserWallet } from "@/lib/user-wallet";
 
 export const runtime = "nodejs";
 
@@ -115,6 +116,9 @@ export async function POST(req: NextRequest) {
         email: true,
         displayName: true,
         walletAddress: true,
+        walletId: true,
+        walletChain: true,
+        avatarUrl: true,
         createdAt: true,
       },
     });
@@ -125,11 +129,39 @@ export async function POST(req: NextRequest) {
       data: { userId: user.id },
     });
 
-    const jwt = signAuthToken({ userId: user.id, email: user.email });
+    // Best-effort: ensure the user has a Circle wallet on Arc Testnet.
+    // The login succeeds regardless so users can still sign in if Circle
+    // is temporarily unreachable — they can retry wallet creation from
+    // /dashboard/wallet later.
+    let walletWarning: string | undefined;
+    try {
+      const w = await ensureUserWallet(user.id);
+      if (w.error) walletWarning = w.error;
+    } catch (e) {
+      console.warn("[auth/verify] wallet create failed:", e);
+      walletWarning = "Wallet generation failed; retry from /dashboard/wallet";
+    }
+
+    // Re-read user in case the wallet got persisted.
+    const fresh = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        walletAddress: true,
+        walletId: true,
+        walletChain: true,
+        avatarUrl: true,
+        createdAt: true,
+      },
+    });
+
+    const jwt = signAuthToken({ userId: fresh!.id, email: fresh!.email });
     await setAuthCookie(jwt);
 
     return NextResponse.json(
-      { ok: true, user } as const,
+      { ok: true, user: fresh!, walletWarning } as const,
       { status: 200 }
     );
   } catch (e) {

@@ -134,3 +134,130 @@ export function otpEmailText({ code, expiresInMinutes }: OtpEmailInput): string 
     "AI Agents. Create. Earn. Hire. Get paid.",
   ].join("\n");
 }
+
+// ============================================
+// PASSWORD RESET EMAIL
+// ============================================
+
+export interface PasswordResetEmailInput {
+  to: string;
+  resetUrl: string;
+}
+
+export function passwordResetEmailHtml({ resetUrl }: PasswordResetEmailInput): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>Reset your Agent Boss password</title>
+</head>
+<body style="margin:0;padding:0;background:#F4F4F5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#0A0A0A;-webkit-font-smoothing:antialiased;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F4F4F5;padding:32px 16px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px;background:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #E4E4E7;">
+
+        <!-- Logo header -->
+        <tr>
+          <td align="center" style="padding:32px 24px 16px 24px;background:#0A0A0A;">
+            <img src="${LOGO_URL}" alt="Agent Boss" width="120" height="120" style="display:block;margin:0 auto;border:0;outline:none;text-decoration:none;">
+          </td>
+        </tr>
+
+        <!-- Heading -->
+        <tr>
+          <td style="padding:32px 32px 8px 32px;">
+            <h1 style="margin:0;font-size:22px;font-weight:700;color:#0A0A0A;line-height:1.3;">Reset your password</h1>
+          </td>
+        </tr>
+
+        <!-- Body copy -->
+        <tr>
+          <td style="padding:8px 32px 24px 32px;">
+            <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#3F3F46;">
+              We received a request to reset your Agent Boss password. Click the button below to choose a new one. The link is valid for 1 hour.
+            </p>
+          </td>
+        </tr>
+
+        <!-- CTA button -->
+        <tr>
+          <td align="center" style="padding:8px 24px 24px 24px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+              <tr>
+                <td style="background:#0A0A0A;border-radius:8px;">
+                  <a href="${resetUrl}" target="_blank" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:700;color:#FFFFFF;text-decoration:none;border-radius:8px;">Reset password</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Fallback link -->
+        <tr>
+          <td style="padding:8px 32px 24px 32px;">
+            <p style="margin:0 0 8px 0;font-size:13px;line-height:1.6;color:#71717A;">If the button doesn't work, paste this link into your browser:</p>
+            <p style="margin:0;font-size:12px;line-height:1.5;color:#71717A;word-break:break-all;">${resetUrl}</p>
+          </td>
+        </tr>
+
+        <!-- Security note -->
+        <tr>
+          <td style="padding:8px 32px 32px 32px;">
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#71717A;">
+              If you didn't request a password reset, you can safely ignore this email. Your password will stay the same.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Divider -->
+        <tr>
+          <td style="padding:0 32px;">
+            <hr style="border:0;border-top:1px solid #E4E4E7;margin:0;">
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td align="center" style="padding:24px 32px 32px 32px;">
+            <p style="margin:0 0 4px 0;font-size:13px;font-weight:700;color:#0A0A0A;letter-spacing:0.5px;">AGENT BOSS</p>
+            <p style="margin:0;font-size:11px;color:#A1A1AA;letter-spacing:1px;">AI AGENTS · CREATE · EARN · HIRE · GET PAID</p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>`;
+}
+
+export function passwordResetEmailText({ resetUrl }: PasswordResetEmailInput): string {
+  return [
+    "Reset your Agent Boss password",
+    "",
+    "We received a request to reset your Agent Boss password.",
+    "Click the link below to choose a new one. It's valid for 1 hour.",
+    "",
+    "    " + resetUrl,
+    "",
+    "If you didn't request a password reset, you can safely ignore this email.",
+    "",
+    "— Agent Boss",
+    "AI Agents. Create. Earn. Hire. Get paid.",
+  ].join("\n");
+}
+
+export async function sendPasswordResetEmail(input: PasswordResetEmailInput): Promise<void> {
+  // Lazy import so server-only modules don't leak to client bundles
+  const { sendEmail } = await import("./resend");
+  await sendEmail({
+    to: input.to,
+    subject: "Reset your Agent Boss password",
+    html: passwordResetEmailHtml(input),
+    text: passwordResetEmailText(input),
+  });
+}

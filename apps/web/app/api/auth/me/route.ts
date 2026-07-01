@@ -25,6 +25,9 @@ export async function GET() {
         email: true,
         displayName: true,
         walletAddress: true,
+        walletId: true,
+        walletChain: true,
+        avatarUrl: true,
         createdAt: true,
       },
     });
