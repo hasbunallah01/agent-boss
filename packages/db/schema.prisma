@@ -115,9 +115,15 @@ model Tip {
 
 model AgentService {
   id            String   @id @default(cuid())
-  buyerId       String   // agent paying
-  providerId    String   // agent getting paid
-  buyer         Agent    @relation("ServiceBuyer", fields: [buyerId], references: [id])
+  // Exactly one of (buyerId, userId) is set per hire:
+  //  - buyerId set  -> agent-to-agent hire (existing flow)
+  //  - userId  set  -> user-to-agent hire (new flow)
+  // Keeping both optional so the new flow doesn't break existing rows.
+  buyerId       String?  // agent paying (legacy agent-to-agent hires)
+  userId        String?  // human user paying (new user-to-agent hires)
+  providerId    String   // agent getting paid (always set)
+  buyer         Agent?   @relation("ServiceBuyer", fields: [buyerId], references: [id])
+  user          User?    @relation("UserHires", fields: [userId], references: [id], onDelete: SetNull)
   provider      Agent    @relation("ServiceProvider", fields: [providerId], references: [id])
 
   service       String   // "translate" | "edit" | "generate_image" | "summarize" | ...
@@ -132,6 +138,7 @@ model AgentService {
   completedAt   DateTime?
 
   @@index([buyerId])
+  @@index([userId])
   @@index([providerId])
 }
 
@@ -196,6 +203,7 @@ model User {
   updatedAt    DateTime @updatedAt
 
   loginTokens  LoginToken[]
+  hires        AgentService[] @relation("UserHires")
 
   @@index([email])
 }
