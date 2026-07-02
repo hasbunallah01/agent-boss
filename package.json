@@ -7,6 +7,7 @@
     "dev": "concurrently \"pnpm --filter @agent-boss/db generate\" \"pnpm --filter web dev\"",
     "build": "pnpm --filter @agent-boss/db generate && pnpm --filter web build",
     "start": "pnpm --filter web start",
+    "postinstall": "pnpm --filter @agent-boss/db generate",
     "db:push": "pnpm --filter @agent-boss/db db:push",
     "db:seed": "pnpm --filter @agent-boss/db db:seed",
     "agents:run": "tsx agents/runtime.ts",
